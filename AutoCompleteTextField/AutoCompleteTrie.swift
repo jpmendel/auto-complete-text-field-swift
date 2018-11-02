@@ -1,0 +1,93 @@
+//
+//  AutoCompleteTrie.swift
+//  AutoCompleteTextField
+//
+//  Created by Jacob Mendelowitz on 10/26/18.
+//  Copyright © 2018 Jacob Mendelowitz. All rights reserved.
+//
+
+import Foundation
+
+private class AutoCompleteTrieNode {
+    fileprivate var value: Character?
+    fileprivate var children: [Character: AutoCompleteTrieNode] = [:]
+    fileprivate var results: [AutoCompletable] = []
+    
+    fileprivate init(value: Character?) {
+        self.value = value
+    }
+}
+
+public class AutoCompleteTrie {
+    private var root: AutoCompleteTrieNode
+    private var isCaseSensitive: Bool
+    
+    public init(dataSource: [AutoCompletable] = [], isCaseSensitive: Bool = false) {
+        self.root = AutoCompleteTrieNode(value: nil)
+        self.isCaseSensitive = isCaseSensitive
+        dataSource.forEach { insert(autoCompletable: $0) }
+    }
+    
+    /// Inserts a string into the trie.
+    /// - parameter autoCompletable: The `AutoCompletable` to insert a string for.
+    public func insert(autoCompletable: AutoCompletable) {
+        var currentNode = root
+        let autoCompleteString = isCaseSensitive ? autoCompletable.autoCompleteString : autoCompletable.autoCompleteString.lowercased()
+        for char in autoCompleteString {
+            if let nextNode = currentNode.children[char] {
+                currentNode = nextNode
+            } else {
+                let newNode = AutoCompleteTrieNode(value: char)
+                currentNode.children[char] = newNode
+                currentNode = newNode
+            }
+        }
+        currentNode.results.append(autoCompletable)
+    }
+    
+    /// Returns `limit` number of strings in the trie that contain the prefix `text`.
+    /// - parameter text: The text used to search for strings in the trie.
+    /// - parameter limit: The amount of results to be found. If `nil`, will find all available results.
+    /// - returns: A list of `AutoCompletable` results that contain the prefix `text`, or `nil` if `text` is empty.
+    public func results(for text: String, limit: Int?) -> [AutoCompletable]? {
+        if text.isEmpty { return nil }
+        var currentNode = root
+        let inputText = isCaseSensitive ? text : text.lowercased()
+        // Step through nodes until we reach the last character of the string.
+        for char in inputText {
+            if let nextNode = currentNode.children[char] {
+                currentNode = nextNode
+            } else {
+                // The input text is not in the trie.
+                return []
+            }
+        }
+        var results = [AutoCompletable]()
+        // Add results that exactly match the input text
+        if let limit = limit {
+            for result in currentNode.results {
+                results.append(result)
+                if results.count >= limit { return results }
+            }
+        } else {
+            results.append(contentsOf: currentNode.results)
+        }
+        var nodes = [currentNode]
+        // BFS to match all results that start with the input text.
+        while let node = nodes.first {
+            nodes.removeFirst()
+            for child in node.children.values {
+                nodes.append(child)
+                if let limit = limit {
+                    for result in child.results {
+                        results.append(result)
+                        if results.count >= limit { return results }
+                    }
+                } else {
+                    results.append(contentsOf: child.results)
+                }
+            }
+        }
+        return results
+    }
+}
