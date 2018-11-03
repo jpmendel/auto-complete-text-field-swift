@@ -1,0 +1,16 @@
+PODS:
+  - AutoCompleteTextField (0.1.0)
+
+DEPENDENCIES:
+  - AutoCompleteTextField (from `../`)
+
+EXTERNAL SOURCES:
+  AutoCompleteTextField:
+    :path: "../"
+
+SPEC CHECKSUMS:
+  AutoCompleteTextField: 9cf77fe82572bdc7243acbfc5efe6f6f3fb90f11
+
+PODFILE CHECKSUM: 5686600400f7297abd4994893250626177ba2f06
+
+COCOAPODS: 1.5.3
