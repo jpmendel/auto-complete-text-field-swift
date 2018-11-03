@@ -79,12 +79,26 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
     /// The maximum height of the result list.
     open var maxResultListHeight: CGFloat = 150
     
-    /// The distance between the result list and the text field. Positive moves it away, and negative moves it closer.
-    open var resultListOffset: CGFloat = 0 {
+    /// The x-offset of the result list.
+    open var resultListOffsetX: CGFloat = 0 {
         didSet {
-            resultListTableViewAnchorConstraint?.constant = resultListOffset
-            resultListTableView.contentInset = UIEdgeInsets(top: tableViewTopInset, left: 0.0, bottom: tableViewBottomInset, right: 0.0)
+            resultListTableViewLeadingConstraint?.constant = resultListOffsetX
+            resultListTableViewTrailingConstraint?.constant = resultListOffsetX
             layoutIfNeeded()
+        }
+    }
+
+    /// The y-offset of the result list.
+    open var resultListOffsetY: CGFloat = 0 {
+        didSet {
+            resultListTableViewAnchorConstraint?.constant = resultListDirection == .down ? resultListOffsetY : -resultListOffsetY
+            layoutIfNeeded()
+        }
+    }
+
+    open var resultListTableViewCellClass: AnyClass? = nil {
+        didSet {
+            resultListTableView.register(resultListTableViewCellClass, forCellReuseIdentifier: "AutoCompleteTableViewCell")
         }
     }
     
@@ -102,12 +116,27 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
         return resultListTableView.layer
     }
     
+    /// The content insets of the result list.
+    open var resultListContentInset: UIEdgeInsets {
+        get { return resultListTableView.contentInset }
+        set { resultListTableView.contentInset = newValue }
+    }
+
     /// The separator style for cells in the result list.
     open var resultListSeparatorStyle: UITableViewCell.SeparatorStyle {
         get { return resultListTableView.separatorStyle }
         set { resultListTableView.separatorStyle = newValue }
     }
     
+    /// The separator inset for cells in the result list.
+    open var resultListSeparatorInset: UIEdgeInsets {
+        get { return resultListTableView.separatorInset }
+        set { resultListTableView.separatorInset = newValue }
+    }
+    
+    /// The height of the rows in the result list.
+    open var resultListRowHeight: CGFloat = 0
+
     /// The font for the text in the result list.
     open var resultListFont: UIFont? = UIFont.systemFont(ofSize: 14)
     
@@ -129,10 +158,9 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
                 item: resultListTableView, attribute: resultListDirection == .down ? .top : .bottom,
                 relatedBy: .equal,
                 toItem: self, attribute: resultListDirection == .down ? .bottom : .top,
-                multiplier: 1, constant: adjustedResultListOffset
+                multiplier: 1, constant: resultListDirection == .down ? resultListOffsetY : -resultListOffsetY
             )
             resultListTableViewAnchorConstraint?.isActive = true
-            resultListTableView.contentInset = UIEdgeInsets(top: tableViewTopInset, left: 0.0, bottom: tableViewBottomInset, right: 0.0)
             layoutIfNeeded()
         }
     }
@@ -145,6 +173,8 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
     private var previousRightViewMode: UITextField.ViewMode = .never
     
     private var resultListTableView: UITableView
+    private var resultListTableViewLeadingConstraint: NSLayoutConstraint?
+    private var resultListTableViewTrailingConstraint: NSLayoutConstraint?
     private var resultListTableViewAnchorConstraint: NSLayoutConstraint?
     private var resultListTableViewHeightConstraint: NSLayoutConstraint?
     
@@ -152,22 +182,10 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
 
     private var autoCompleteTrie: AutoCompleteTrie?
     private var filteredResults: [AutoCompletable] = []
-
-    private var adjustedResultListOffset: CGFloat {
-        return resultListDirection == .down ? resultListOffset : -resultListOffset
-    }
-    
-    private var tableViewTopInset: CGFloat {
-        return resultListDirection == .down && adjustedResultListOffset < 0 ? -adjustedResultListOffset : 0
-    }
-    
-    private var tableViewBottomInset: CGFloat {
-        return resultListDirection == .up && adjustedResultListOffset > 0 ? adjustedResultListOffset : 0
-    }
     
     private var currentResultListHeight: CGFloat {
-        return tableViewTopInset + tableViewBottomInset
-            + (((frame.height * CGFloat(filteredResults.count)) < maxResultListHeight) ? (frame.height * CGFloat(filteredResults.count)) : maxResultListHeight)
+        let totalHeight = frame.height * CGFloat(filteredResults.count)
+        return totalHeight < maxResultListHeight ? totalHeight : maxResultListHeight
     }
 
     private var currentInputText: String = ""
@@ -260,23 +278,25 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
         addSubview(resultListTableView)
         sendSubviewToBack(resultListTableView)
         resultListTableView.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint(
+        resultListTableViewLeadingConstraint = NSLayoutConstraint(
             item: resultListTableView, attribute: .leading,
             relatedBy: .equal,
             toItem: self, attribute: .leading,
-            multiplier: 1, constant: 0
-        ).isActive = true
-        NSLayoutConstraint(
+            multiplier: 1, constant: resultListOffsetX
+        )
+        resultListTableViewLeadingConstraint?.isActive = true
+        resultListTableViewTrailingConstraint = NSLayoutConstraint(
             item: resultListTableView, attribute: .trailing,
             relatedBy: .equal,
             toItem: self, attribute: .trailing,
-            multiplier: 1, constant: 0
-        ).isActive = true
+            multiplier: 1, constant: resultListOffsetX
+        )
+        resultListTableViewTrailingConstraint?.isActive = true
         resultListTableViewAnchorConstraint = NSLayoutConstraint(
             item: resultListTableView, attribute: .top,
             relatedBy: .equal,
             toItem: self, attribute: .bottom,
-            multiplier: 1, constant: adjustedResultListOffset
+            multiplier: 1, constant: resultListOffsetY
         )
         resultListTableViewAnchorConstraint?.isActive = true
         resultListTableViewHeightConstraint = NSLayoutConstraint(
@@ -294,18 +314,20 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
             resultListTableView.layer.borderWidth = 0.25
             resultListTableView.layer.cornerRadius = 5
             resultListTableView.separatorStyle = .singleLine
-            resultListOffset = -15
+            resultListOffsetY = -15
+            resultListContentInset.top = 15
         } else if borderStyle == .line || borderStyle == .bezel {
             resultListTableView.layer.borderColor = UIColor.black.cgColor
             resultListTableView.layer.borderWidth = 0.5
             resultListTableView.separatorStyle = .singleLine
-            resultListOffset = -1
+            resultListOffsetY = -1
+            resultListContentInset.top = 1
         } else {
             resultListTableView.separatorStyle = .none
-            resultListOffset = 0
+            resultListOffsetY = 0
         }
 
-        resultListTableView.contentInset = UIEdgeInsets(top: tableViewTopInset, left: 0.0, bottom: tableViewBottomInset, right: 0.0)
+        resultListRowHeight = frame.height
         resultListTableView.separatorInset = .zero
         
         resultListBackgroundColor = backgroundColor
@@ -354,6 +376,22 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
         loadTrieWorkItem?.cancel()
         loadTrieWorkItem = nil
         self.autoCompleteTrie = autoCompleteTrie
+    }
+
+    /// Override this function to use a custom cell in the result list.
+    /// - parameter indexPath: The index path of the new cell.
+    open func setupResultListTableViewCell(at indexPath: IndexPath) -> UITableViewCell {
+        let cell = UITableViewCell(style: .default, reuseIdentifier: "AutoCompleteTableViewCell")
+        cell.backgroundColor = .clear
+        cell.textLabel?.textColor = resultListTextColor
+        cell.textLabel?.font = resultListFont
+        cell.textLabel?.attributedText = textByApplying(
+            attributes: matchedTextAttributes,
+            to: filteredResults[indexPath.row].autoCompleteString,
+            before: currentInputText.count
+        )
+        cell.selectionStyle = .none
+        return cell
     }
 
     // MARK: - Private Logic Functions
@@ -412,6 +450,7 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
     private func filterResultsFrom(unsortedData: [AutoCompletable], with inputText: String) -> [AutoCompletable] {
         var filteredData = [AutoCompletable]()
         for result in unsortedData {
+            guard inputText.count <= result.autoCompleteString.count else { continue }
             if isCaseSensitive {
                 if result.autoCompleteString.hasPrefix(inputText) {
                     filteredData.append(result)
@@ -501,22 +540,14 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
     }
     
     open func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return frame.height
+        return resultListRowHeight
     }
     
     open func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = UITableViewCell(style: .default, reuseIdentifier: "AutoCompleteTableViewCell")
-        cell.backgroundColor = .clear
-        guard !isFilteringResults, indexPath.row >= 0, indexPath.row < filteredResults.count else { return cell }
-        cell.textLabel?.textColor = resultListTextColor
-        cell.textLabel?.font = resultListFont
-        cell.textLabel?.attributedText = textByApplying(
-            attributes: matchedTextAttributes,
-            to: filteredResults[indexPath.row].autoCompleteString,
-            before: currentInputText.count
-        )
-        cell.selectionStyle = .none
-        return cell
+        let backupCell = UITableViewCell(style: .default, reuseIdentifier: "BackupTableViewCell")
+        backupCell.backgroundColor = .clear
+        guard !isFilteringResults, indexPath.row >= 0, indexPath.row < filteredResults.count else { return backupCell }
+        return setupResultListTableViewCell(at: indexPath)
     }
     
     open func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -537,7 +568,10 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
     @objc private func textFieldDidChange(_ textField: UITextField) {
         if shouldAutoComplete {
             if isFilteringResults {
-                showLoadingIndicator()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                    guard let strongSelf = self, strongSelf.isFilteringResults else { return }
+                    strongSelf.showLoadingIndicator()
+                }
                 if shouldShowInlineAutoCompletion {
                     showOnlyInputText()
                 }
