@@ -25,6 +25,11 @@ public protocol AutoCompleteTextFieldDelegate: class {
     /// - parameter textField: The `AutoCompleteTextField` the result is selected from.
     /// - parameter result: The `AutoCompletable` result that was just selected.
     func autoCompleteTextField(_ textField: AutoCompleteTextField, didSelect result: AutoCompletable)
+
+    /// Called when creating cells to populate the result list.
+    /// - parameter textField: The `AutoCompleteTextField` the cell is for.
+    /// - returns: A `UITableViewCell` to use or `nil` to use the default cell.
+    func autoCompleteTextField(_ textField: AutoCompleteTextField, cellForResultAt indexPath: IndexPath) -> UITableViewCell?
 }
 
 // MARK: - AutoCompleteTextFieldDelegate Default Implementation
@@ -32,6 +37,7 @@ public extension AutoCompleteTextFieldDelegate {
     func autoCompleteTextField(_ textField: AutoCompleteTextField, didFilter results: [AutoCompletable]?) { }
     func autoCompleteTextField(_ textField: AutoCompleteTextField, shouldSelect result: AutoCompletable) -> Bool { return true }
     func autoCompleteTextField(_ textField: AutoCompleteTextField, didSelect result: AutoCompletable) { }
+    func autoCompleteTextField(_ textField: AutoCompleteTextField, cellForResultAt indexPath: IndexPath) -> UITableViewCell? { return nil }
 }
 
 // MARK: - AutoCompleteTextField
@@ -69,6 +75,9 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
 
     /// If `true`, shows the rest of an auto-completion result inline with the input text.
     open var shouldShowInlineAutoCompletion: Bool = false
+
+    /// If `true`, shows a loading indicator during long search operations.
+    open var shouldShowLoadingIndicator: Bool = true
 
     /// If `true`, the auto-complete filtering will be case sensitive.
     open var isCaseSensitive: Bool = false
@@ -129,7 +138,7 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
     }
 
     /// The height of the rows in the result list.
-    open var resultListRowHeight: CGFloat = 0
+    open var resultListCellHeight: CGFloat = 0
 
     /// The font for the text in the result list.
     open var resultListFont: UIFont? = UIFont.systemFont(ofSize: 14)
@@ -321,7 +330,7 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
             resultListOffsetY = 0
         }
 
-        resultListRowHeight = frame.height
+        resultListCellHeight = frame.height
         resultListTableView.separatorInset = .zero
 
         resultListBackgroundColor = backgroundColor
@@ -372,19 +381,19 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
         self.autoCompleteTrie = autoCompleteTrie
     }
 
-    /// Override this function to use a custom cell in the result list.
-    /// - parameter indexPath: The index path of the new cell.
-    open func setupResultListTableViewCell(at indexPath: IndexPath) -> UITableViewCell {
-        let cell = UITableViewCell(style: .default, reuseIdentifier: "AutoCompleteTableViewCell")
-        cell.backgroundColor = .clear
-        cell.textLabel?.textColor = resultListTextColor
-        cell.textLabel?.font = resultListFont
-        cell.textLabel?.attributedText = textByApplying(
-            attributes: matchedTextAttributes,
-            to: filteredResults[indexPath.row].autoCompleteString,
-            before: currentInputText.count
-        )
-        cell.selectionStyle = .none
+    /// Registers a new cell to use in the list of auto-complete results.
+    /// - parameter cellClass: The class of the `UITableViewCell` to register.
+    public func registerAutoCompleteCell(class cellClass: AnyClass) {
+        let nibName = String(describing: cellClass)
+        resultListTableView.register(UINib(nibName: nibName, bundle: nil), forCellReuseIdentifier: nibName)
+    }
+
+    /// Dequeues a new cell to use in the list of auto-complete results.
+    /// - returns: The cell of the given return type.
+    public func dequeueAutoCompleteCell<T: UITableViewCell>() -> T {
+        guard let cell = resultListTableView.dequeueReusableCell(withIdentifier: String(describing: T.self)) as? T else {
+            fatalError("[AutoCompleteTextField] Failed to dequeue auto-complete cell.")
+        }
         return cell
     }
 
@@ -477,6 +486,20 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
         selectedTextRange = textRange(from: cursorPosition, to: cursorPosition)
     }
 
+    private func createDefaultAutoCompleteCell(at indexPath: IndexPath) -> UITableViewCell {
+        let cell = UITableViewCell(style: .default, reuseIdentifier: "AutoCompleteTableViewCell")
+        cell.backgroundColor = .clear
+        cell.textLabel?.textColor = resultListTextColor
+        cell.textLabel?.font = resultListFont
+        cell.textLabel?.attributedText = textByApplying(
+            attributes: matchedTextAttributes,
+            to: filteredResults[indexPath.row].autoCompleteString,
+            before: currentInputText.count
+        )
+        cell.selectionStyle = .none
+        return cell
+    }
+
     // MARK: - Utility Functions
 
     private func substring(of string: String, before index: Int) -> String {
@@ -534,14 +557,17 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
     }
 
     open func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return resultListRowHeight
+        return resultListCellHeight
     }
 
     open func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let backupCell = UITableViewCell(style: .default, reuseIdentifier: "BackupTableViewCell")
         backupCell.backgroundColor = .clear
         guard !isFilteringResults, indexPath.row >= 0, indexPath.row < filteredResults.count else { return backupCell }
-        return setupResultListTableViewCell(at: indexPath)
+        if let autoCompleteDelegate = autoCompleteDelegate {
+            return autoCompleteDelegate.autoCompleteTextField(self, cellForResultAt: indexPath) ?? createDefaultAutoCompleteCell(at: indexPath)
+        }
+        return createDefaultAutoCompleteCell(at: indexPath)
     }
 
     open func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -651,6 +677,7 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
     }
 
     private func showLoadingIndicator() {
+        guard shouldShowLoadingIndicator else { return }
         previousRightView = rightView
         previousRightViewMode = rightViewMode
         rightView = loadingView
@@ -659,6 +686,7 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
     }
 
     private func hideLoadingIndicator() {
+        guard shouldShowLoadingIndicator else { return }
         rightView = previousRightView
         rightViewMode = previousRightViewMode
         loadingActivityIndicatorView.stopAnimating()
