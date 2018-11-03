@@ -12,7 +12,7 @@ private class AutoCompleteTrieNode {
     fileprivate var value: Character?
     fileprivate var children: [Character: AutoCompleteTrieNode] = [:]
     fileprivate var results: [AutoCompletable] = []
-    
+
     fileprivate init(value: Character?) {
         self.value = value
     }
@@ -21,13 +21,13 @@ private class AutoCompleteTrieNode {
 public class AutoCompleteTrie {
     private var root: AutoCompleteTrieNode
     private var isCaseSensitive: Bool
-    
+
     public init(dataSource: [AutoCompletable] = [], isCaseSensitive: Bool = false) {
         self.root = AutoCompleteTrieNode(value: nil)
         self.isCaseSensitive = isCaseSensitive
         dataSource.forEach { insert(autoCompletable: $0) }
     }
-    
+
     /// Inserts a string into the trie.
     /// - parameter autoCompletable: The `AutoCompletable` to insert a string for.
     public func insert(autoCompletable: AutoCompletable) {
@@ -44,7 +44,7 @@ public class AutoCompleteTrie {
         }
         currentNode.results.append(autoCompletable)
     }
-    
+
     /// Returns `limit` number of strings in the trie that contain the prefix `text`.
     /// - parameter text: The text used to search for strings in the trie.
     /// - parameter limit: The amount of results to be found. If `nil`, will find all available results.
