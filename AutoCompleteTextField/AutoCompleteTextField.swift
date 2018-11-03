@@ -14,13 +14,13 @@ public protocol AutoCompleteTextFieldDelegate: class {
     /// - parameter textField: The `AutoCompleteTextField` filtering the results.
     /// - parameter results: A list of `AutoCompletable` results, or `nil` if the text field has no text in it.
     func autoCompleteTextField(_ textField: AutoCompleteTextField, didFilter results: [AutoCompletable]?)
-    
+
     /// Called before a result is about to be selected.
     /// - parameter textField: The `AutoCompleteTextField` the result is selected from.
     /// - parameter result: The `AutoCompletable` result that is about to be selected.
     /// - returns: `true` if the result should be selected, or `false` if it should not.
     func autoCompleteTextField(_ textField: AutoCompleteTextField, shouldSelect result: AutoCompletable) -> Bool
-    
+
     /// Called after a result is selected.
     /// - parameter textField: The `AutoCompleteTextField` the result is selected from.
     /// - parameter result: The `AutoCompletable` result that was just selected.
@@ -36,9 +36,9 @@ public extension AutoCompleteTextFieldDelegate {
 
 // MARK: - AutoCompleteTextField
 open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewDelegate, UITableViewDataSource {
-    
+
     // MARK: - Public Enums
-    
+
     /// The direction that the result list will flow.
     public enum ResultListDirection {
         case down
@@ -57,28 +57,28 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
             createAutoCompleteTrie()
         }
     }
-    
+
     /// If `true`, text field will look for auto-complete results.
     open var shouldAutoComplete: Bool = true
-    
+
     /// If `true`, a search trie will be built when a new `dataSource` is set.
     open var shouldBuildTrieOnNewDataSource: Bool = true
-    
+
     /// If `true`, shows a drop down list of strings for auto-completion.
     open var shouldShowResultList: Bool = true
-    
+
     /// If `true`, shows the rest of an auto-completion result inline with the input text.
     open var shouldShowInlineAutoCompletion: Bool = false
-    
+
     /// If `true`, the auto-complete filtering will be case sensitive.
     open var isCaseSensitive: Bool = false
-    
+
     /// The maximum number of auto-complete results shown in the result list. If `nil`, there is no limit.
     open var maxResultCount: Int? = 50
-    
+
     /// The maximum height of the result list.
     open var maxResultListHeight: CGFloat = 150
-    
+
     /// The x-offset of the result list.
     open var resultListOffsetX: CGFloat = 0 {
         didSet {
@@ -96,26 +96,20 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
         }
     }
 
-    open var resultListTableViewCellClass: AnyClass? = nil {
-        didSet {
-            resultListTableView.register(resultListTableViewCellClass, forCellReuseIdentifier: "AutoCompleteTableViewCell")
-        }
-    }
-    
     /// The color of the text of the auto-complete results.
     open var resultListTextColor: UIColor? = .black
-    
+
     /// The background color of the result list.
     open var resultListBackgroundColor: UIColor? {
         get { return resultListTableView.backgroundColor }
         set { resultListTableView.backgroundColor = newValue }
     }
-    
+
     /// The layer for the result list.
     open var resultListLayer: CALayer {
         return resultListTableView.layer
     }
-    
+
     /// The content insets of the result list.
     open var resultListContentInset: UIEdgeInsets {
         get { return resultListTableView.contentInset }
@@ -127,29 +121,29 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
         get { return resultListTableView.separatorStyle }
         set { resultListTableView.separatorStyle = newValue }
     }
-    
+
     /// The separator inset for cells in the result list.
     open var resultListSeparatorInset: UIEdgeInsets {
         get { return resultListTableView.separatorInset }
         set { resultListTableView.separatorInset = newValue }
     }
-    
+
     /// The height of the rows in the result list.
     open var resultListRowHeight: CGFloat = 0
 
     /// The font for the text in the result list.
     open var resultListFont: UIFont? = UIFont.systemFont(ofSize: 14)
-    
+
     /// String attributes for the text in a result that matches the text in the text field.
     open var matchedTextAttributes: [NSAttributedString.Key: Any] = [
         .font: UIFont.boldSystemFont(ofSize: 14)
     ]
-    
+
     /// String attributes for the rest of an auto-completion result inline with the input text.
     open var inlineAutoCompletionTextAttributes: [NSAttributedString.Key: Any] = [
         .foregroundColor: UIColor.lightGray, .backgroundColor: UIColor.clear
     ]
-    
+
     /// The direction the result list will flow.
     open var resultListDirection: ResultListDirection = .down {
         didSet {
@@ -171,18 +165,18 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
     private var loadingActivityIndicatorView: UIActivityIndicatorView
     private var previousRightView: UIView?
     private var previousRightViewMode: UITextField.ViewMode = .never
-    
+
     private var resultListTableView: UITableView
     private var resultListTableViewLeadingConstraint: NSLayoutConstraint?
     private var resultListTableViewTrailingConstraint: NSLayoutConstraint?
     private var resultListTableViewAnchorConstraint: NSLayoutConstraint?
     private var resultListTableViewHeightConstraint: NSLayoutConstraint?
-    
+
     private weak var textFieldDelegate: UITextFieldDelegate?
 
     private var autoCompleteTrie: AutoCompleteTrie?
     private var filteredResults: [AutoCompletable] = []
-    
+
     private var currentResultListHeight: CGFloat {
         let totalHeight = frame.height * CGFloat(filteredResults.count)
         return totalHeight < maxResultListHeight ? totalHeight : maxResultListHeight
@@ -191,15 +185,15 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
     private var currentInputText: String = ""
     private var currentInlineAutoCompletionText: String = ""
     private var autoCompletionResultIndex: Int = 0
-    
+
     private var isFilteringResults: Bool = false
     private var isTextFieldUIUpdating: Bool = false
 
     private var loadTrieWorkItem: DispatchWorkItem?
     private var filterDataSourceWorkItem: DispatchWorkItem?
-    
+
     // MARK: - Override Properties
-    
+
     open override var delegate: UITextFieldDelegate? {
         didSet {
             if delegate === self { return }
@@ -207,7 +201,7 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
             delegate = oldValue
         }
     }
-    
+
     open override var selectedTextRange: UITextRange? {
         didSet {
             guard
@@ -218,9 +212,9 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
             selectedTextRange = textRange(from: lastPosition, to: lastPosition)
         }
     }
-    
+
     // MARK: - Initialzers
-    
+
     public override init(frame: CGRect) {
         loadingView = UIView()
         loadingActivityIndicatorView = UIActivityIndicatorView(style: .gray)
@@ -228,7 +222,7 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
         super.init(frame: frame)
         setupAutoCompleteTextField()
     }
-    
+
     public required init?(coder aDecoder: NSCoder) {
         loadingView = UIView()
         loadingActivityIndicatorView = UIActivityIndicatorView(style: .gray)
@@ -236,16 +230,16 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
         super.init(coder: aDecoder)
         setupAutoCompleteTextField()
     }
-    
+
     // MARK: - Lifecycle
-    
+
     open override func awakeFromNib() {
         super.awakeFromNib()
         formatResultListTableView()
     }
-    
+
     // MARK: - Setup Functions
-    
+
     private func setupAutoCompleteTextField() {
         delegate = self
         resultListTableView.delegate = self
@@ -254,7 +248,7 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
         createLoadingView()
         createResultListTableView()
     }
-    
+
     private func createLoadingView() {
         loadingView.frame = CGRect(x: 0, y: 0, width: frame.height, height: frame.height)
         loadingView.addSubview(loadingActivityIndicatorView)
@@ -265,15 +259,15 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
             relatedBy: .equal,
             toItem: loadingView, attribute: .centerX,
             multiplier: 1, constant: 0
-        ).isActive = true
+            ).isActive = true
         NSLayoutConstraint(
             item: loadingActivityIndicatorView, attribute: .centerY,
             relatedBy: .equal,
             toItem: loadingView, attribute: .centerY,
             multiplier: 1, constant: 0
-        ).isActive = true
+            ).isActive = true
     }
-    
+
     private func createResultListTableView() {
         addSubview(resultListTableView)
         sendSubviewToBack(resultListTableView)
@@ -307,7 +301,7 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
         )
         resultListTableViewHeightConstraint?.isActive = true
     }
-    
+
     private func formatResultListTableView() {
         if borderStyle == .roundedRect {
             resultListTableView.layer.borderColor = UIColor.lightGray.cgColor
@@ -329,19 +323,19 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
 
         resultListRowHeight = frame.height
         resultListTableView.separatorInset = .zero
-        
+
         resultListBackgroundColor = backgroundColor
         resultListFont = font
         if let font = font {
             matchedTextAttributes = [.font: UIFont(name: "\(font.fontName)-Bold", size: font.pointSize) ?? UIFont.systemFont(ofSize: 14, weight: .bold)]
         }
-        
+
         resultListTableView.isHidden = true
         resultListTableView.reloadData()
     }
-    
+
     // MARK: - Public Functions
-    
+
     /// Sets the current text in the text field, to the result at `index`.
     /// - parameter index: The index of the auto-complete result to select.
     open func selectResult(at index: Int) {
@@ -355,12 +349,12 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
             autoCompleteDelegate?.autoCompleteTextField(self, didSelect: result)
         }
     }
-    
+
     /// Sets the current text in the text field to the first result in the list.
     open func selectFirstResult() {
         selectResult(at: 0)
     }
-    
+
     /// Sets the current result to be shown in inline auto-completion.
     /// - parameter index: The index of the auto-complete result to set to appear inline.
     open func setResultForInlineAutoCompletion(at index: Int) {
@@ -395,7 +389,7 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
     }
 
     // MARK: - Private Logic Functions
-    
+
     private func createAutoCompleteTrie() {
         loadTrieWorkItem?.cancel()
         loadTrieWorkItem = DispatchWorkItem { [weak self] in
@@ -406,7 +400,7 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
         guard let loadTrieWorkItem = loadTrieWorkItem else { return }
         DispatchQueue.global(qos: .background).async(execute: loadTrieWorkItem)
     }
-    
+
     private func processResults(for updatedText: String) {
         currentInputText = substring(of: updatedText, before: updatedText.count - currentInlineAutoCompletionText.count)
         autoCompletionResultIndex = 0
@@ -421,7 +415,7 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
             !strongSelf.currentInputText.isEmpty ? strongSelf.playShowResultListAnimation() : strongSelf.playHideResultListAnimation()
         }
     }
-    
+
     private func filterDataSource(with inputText: String, completion: @escaping () -> Void) {
         filterDataSourceWorkItem?.cancel()
         guard !inputText.isEmpty else {
@@ -446,7 +440,7 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
         guard let filterDataSourceWorkItem = filterDataSourceWorkItem else { return }
         DispatchQueue.global(qos: .background).async(execute: filterDataSourceWorkItem)
     }
-    
+
     private func filterResultsFrom(unsortedData: [AutoCompletable], with inputText: String) -> [AutoCompletable] {
         var filteredData = [AutoCompletable]()
         for result in unsortedData {
@@ -467,7 +461,7 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
         }
         return sortedData
     }
-    
+
     private func showInlineAutoCompletion(for inputText: String, at index: Int) {
         guard let cursorPosition = position(from: beginningOfDocument, offset: inputText.count) else { return }
         var textCompletion = ""
@@ -482,14 +476,14 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
         )
         selectedTextRange = textRange(from: cursorPosition, to: cursorPosition)
     }
-    
+
     // MARK: - Utility Functions
-    
+
     private func substring(of string: String, before index: Int) -> String {
         guard index > -1, index <= string.count else { return "" }
         return String(string[string.startIndex..<string.index(string.startIndex, offsetBy: index)])
     }
-    
+
     private func substring(of string: String, after index: Int) -> String {
         guard index >= -1, index < string.count else { return "" }
         return String(string[string.index(string.startIndex, offsetBy: index)..<string.endIndex])
@@ -510,21 +504,21 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
         attributedString.append(NSAttributedString(string: String(text[attributedStartIndex..<text.endIndex]), attributes: attributes))
         return attributedString
     }
-    
+
     private func showOnlyInputText() {
         currentInlineAutoCompletionText = ""
         text = currentInputText
     }
-    
+
     private func resetAutoCompleteTextField() {
         filteredResults = []
         currentInlineAutoCompletionText = ""
         currentInputText = ""
         text = currentInputText
     }
-    
+
     // MARK: - Override Functions
-    
+
     open override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         for subview in subviews {
             let view = subview.hitTest(convert(point, to: subview), with: event)
@@ -532,30 +526,30 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
         }
         return super.hitTest(point, with: event)
     }
-    
+
     // MARK: - UITableViewDelegate
-    
+
     open func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return filteredResults.count
     }
-    
+
     open func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return resultListRowHeight
     }
-    
+
     open func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let backupCell = UITableViewCell(style: .default, reuseIdentifier: "BackupTableViewCell")
         backupCell.backgroundColor = .clear
         guard !isFilteringResults, indexPath.row >= 0, indexPath.row < filteredResults.count else { return backupCell }
         return setupResultListTableViewCell(at: indexPath)
     }
-    
+
     open func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         selectResult(at: indexPath.row)
     }
-    
+
     // MARK: - UITextFieldDelegate
-    
+
     open func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
         isTextFieldUIUpdating = true
         if shouldAutoComplete, let nsText = textField.text as NSString? {
@@ -583,21 +577,21 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
         }
         isTextFieldUIUpdating = false
     }
-    
+
     open func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         return textFieldDelegate?.textFieldShouldReturn?(textField) ?? true
     }
-    
+
     open func textFieldShouldClear(_ textField: UITextField) -> Bool {
         resetAutoCompleteTextField()
         playHideResultListAnimation()
         return textFieldDelegate?.textFieldShouldClear?(textField) ?? true
     }
-    
+
     open func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
         return textFieldDelegate?.textFieldShouldBeginEditing?(textField) ?? true
     }
-    
+
     open func textFieldDidBeginEditing(_ textField: UITextField) {
         if let text = textField.text, !text.isEmpty {
             currentInputText = text
@@ -615,25 +609,25 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
         }
         textFieldDelegate?.textFieldDidBeginEditing?(textField)
     }
-    
+
     open func textFieldShouldEndEditing(_ textField: UITextField) -> Bool {
         return textFieldDelegate?.textFieldShouldEndEditing?(textField) ?? true
     }
-    
+
     open func textFieldDidEndEditing(_ textField: UITextField) {
         showOnlyInputText()
         playHideResultListAnimation()
         textFieldDelegate?.textFieldDidEndEditing?(textField)
     }
-    
+
     open func textFieldDidEndEditing(_ textField: UITextField, reason: UITextField.DidEndEditingReason) {
         showOnlyInputText()
         playHideResultListAnimation()
         textFieldDelegate?.textFieldDidEndEditing?(textField, reason: reason)
     }
-    
+
     // MARK: - Animations
-    
+
     private func playShowResultListAnimation() {
         guard shouldShowResultList else { return }
         resultListTableView.reloadData()
@@ -644,7 +638,7 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
             self.layoutIfNeeded()
         }, completion: nil)
     }
-    
+
     private func playHideResultListAnimation() {
         guard shouldShowResultList else { return }
         layoutIfNeeded()
@@ -655,7 +649,7 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
             self.resultListTableView.isHidden = true
         })
     }
-    
+
     private func showLoadingIndicator() {
         previousRightView = rightView
         previousRightViewMode = rightViewMode
@@ -663,7 +657,7 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
         rightViewMode = .always
         loadingActivityIndicatorView.startAnimating()
     }
-    
+
     private func hideLoadingIndicator() {
         rightView = previousRightView
         rightViewMode = previousRightViewMode
