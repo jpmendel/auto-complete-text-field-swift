@@ -74,7 +74,9 @@ class MenuViewController: UIViewController, UITableViewDelegate, UITableViewData
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         var viewController: UIViewController?
         if indexPath.section == 0 {
-
+            if usageExamples[indexPath.row] == "Result List" {
+                viewController = ResultListExampleViewController()
+            }
         } else if indexPath.section == 1 {
             if styleExamples[indexPath.row] == "Rounded" {
                 viewController = RoundedStyleViewController()
