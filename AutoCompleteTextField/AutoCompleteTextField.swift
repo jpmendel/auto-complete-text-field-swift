@@ -399,10 +399,31 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
         selectResult(at: 0)
     }
 
+    /// Sets the current text in the text field to the current result for inline auto-completion.
+    open func selectCurrentInlineAutoCompletionResult() {
+        selectResult(at: autoCompletionResultIndex)
+    }
+
     /// Sets the current result to be shown in inline auto-completion.
     /// - parameter index: The index of the auto-complete result to set to appear inline.
     open func setResultForInlineAutoCompletion(at index: Int) {
         autoCompletionResultIndex = index
+        if shouldShowInlineAutoCompletion {
+            showInlineAutoCompletion(for: currentInputText, at: autoCompletionResultIndex)
+        }
+    }
+
+    /// Sets the current result to be shown in inline auto-completion to the next result.
+    open func nextResultForInlineAutoCompeletion() {
+        autoCompletionResultIndex = autoCompletionResultIndex == filteredResults.count - 1 ? 0 : autoCompletionResultIndex + 1
+        if shouldShowInlineAutoCompletion {
+            showInlineAutoCompletion(for: currentInputText, at: autoCompletionResultIndex)
+        }
+    }
+
+    /// Sets the current result to be shown in inline auto-completion to the previous result.
+    open func previousResultForInlineAutoCompletion() {
+        autoCompletionResultIndex = autoCompletionResultIndex == 0 ? filteredResults.count - 1 : autoCompletionResultIndex - 1
         if shouldShowInlineAutoCompletion {
             showInlineAutoCompletion(for: currentInputText, at: autoCompletionResultIndex)
         }
