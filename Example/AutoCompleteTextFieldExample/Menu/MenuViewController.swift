@@ -63,6 +63,9 @@ class MenuViewController: UIViewController, UITableViewDelegate, UITableViewData
         let cell = UITableViewCell(style: .default, reuseIdentifier: "MenuTableViewCell")
         if indexPath.section == 0 {
             cell.textLabel?.text = usageExamples[indexPath.row]
+            if usageExamples[indexPath.row] == "Linked Data Source" {
+                cell.textLabel?.textColor = .lightGray
+            }
         } else if indexPath.section == 1 {
             cell.textLabel?.text = styleExamples[indexPath.row]
         }

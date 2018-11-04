@@ -21,7 +21,7 @@ class InlineCompletionExampleViewController: UIViewController, UITextFieldDelega
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "Result List"
+        title = "Inline Completion"
         setupAutoCompleteTextField()
         setupButtons()
     }
