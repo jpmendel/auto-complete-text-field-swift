@@ -26,4 +26,11 @@ public class AutoCompleteDataSource {
             autoCompleteTrie.insert(autoCompletable: autoCompletable)
         }
     }
+
+    public func remove(allMatching autoCompleteString: String) {
+        data = data.filter { $0.autoCompleteString != autoCompleteString }
+        if let autoCompleteTrie = autoCompleteTrie {
+            autoCompleteTrie.remove(allMatching: autoCompleteString)
+        }
+    }
 }

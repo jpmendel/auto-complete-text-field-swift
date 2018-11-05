@@ -96,7 +96,19 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
     open var maxResultCount: Int? = 50
 
     /// The maximum height of the result list.
-    open var maxResultListHeight: CGFloat = 150
+    open var maxResultListHeight: CGFloat = 150 {
+        didSet {
+            if !resultListTableView.isHidden {
+                playShowResultListAnimation()
+            }
+        }
+    }
+
+    /// The current height of the result list.
+    open var currentResultListHeight: CGFloat {
+        let totalHeight = resultListCellHeight * CGFloat(filteredResults.count)
+        return totalHeight < maxResultListHeight ? totalHeight + resultListInsetHeight : maxResultListHeight + resultListInsetHeight
+    }
 
     /// The x-offset of the result list.
     open var resultListOffsetX: CGFloat = 0 {
@@ -200,11 +212,6 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
 
     private var resultListInsetHeight: CGFloat {
         return resultListDirection == .down ? resultListTableView.contentInset.top : resultListTableView.contentInset.bottom
-    }
-
-    private var currentResultListHeight: CGFloat {
-        let totalHeight = resultListCellHeight * CGFloat(filteredResults.count)
-        return totalHeight < maxResultListHeight ? totalHeight + resultListInsetHeight : maxResultListHeight + resultListInsetHeight
     }
 
     private var currentInputText: String = ""

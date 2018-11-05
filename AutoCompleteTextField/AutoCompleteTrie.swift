@@ -28,7 +28,7 @@ public class AutoCompleteTrie {
         dataSource.forEach { insert(autoCompletable: $0) }
     }
 
-    /// Inserts a string into the trie.
+    /// Inserts an auto-completable into the trie.
     /// - parameter autoCompletable: The `AutoCompletable` to insert a string for.
     public func insert(autoCompletable: AutoCompletable) {
         var currentNode = root
@@ -43,6 +43,21 @@ public class AutoCompleteTrie {
             }
         }
         currentNode.results.append(autoCompletable)
+    }
+
+    /// Removes all auto-completables from the trie that match the given auto-complete string.
+    /// - parameter autoCompleteString: The string to remove `AutoCompletable` objects for.
+    public func remove(allMatching autoCompleteString: String) {
+        var currentNode = root
+        let autoCompleteString = isCaseSensitive ? autoCompleteString : autoCompleteString.lowercased()
+        for char in autoCompleteString {
+            if let nextNode = currentNode.children[char] {
+                currentNode = nextNode
+            } else {
+                return
+            }
+        }
+        currentNode.results = []
     }
 
     /// Returns `limit` number of strings in the trie that contain the prefix `text`.
