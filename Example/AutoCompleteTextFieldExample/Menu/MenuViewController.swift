@@ -63,9 +63,6 @@ class MenuViewController: UIViewController, UITableViewDelegate, UITableViewData
         let cell = UITableViewCell(style: .default, reuseIdentifier: "MenuTableViewCell")
         if indexPath.section == 0 {
             cell.textLabel?.text = usageExamples[indexPath.row]
-            if usageExamples[indexPath.row] == "Linked Data Source" {
-                cell.textLabel?.textColor = .lightGray
-            }
         } else if indexPath.section == 1 {
             cell.textLabel?.text = styleExamples[indexPath.row]
         }
@@ -81,6 +78,8 @@ class MenuViewController: UIViewController, UITableViewDelegate, UITableViewData
                 viewController = ResultListExampleViewController()
             } else if usageExamples[indexPath.row] == "Inline Completion" {
                 viewController = InlineCompletionExampleViewController()
+            } else if usageExamples[indexPath.row] == "Linked Data Source" {
+                viewController = LinkedDataSourceExampleViewController()
             }
         } else if indexPath.section == 1 {
             if styleExamples[indexPath.row] == "Rounded" {

@@ -13,6 +13,8 @@ class ResultListExampleViewController: UIViewController, UITextFieldDelegate, Au
     @IBOutlet private var autoCompleteTextField: AutoCompleteTextField!
     @IBOutlet private var resultLabel: UILabel!
 
+    @IBOutlet private var resultLabelTopConstraint: NSLayoutConstraint!
+
     private let dataSource = ["One", "One Two", "One Two Three", "One Two Three Four", "One Two Three Four Five", "One Two Three Four Six"]
 
     // MARK: - Lifecycle
@@ -69,6 +71,20 @@ class ResultListExampleViewController: UIViewController, UITextFieldDelegate, Au
         // Set result text to label when result is selected.
         guard let result = result as? String else { return }
         resultLabel.text = "Selected: \(result)"
+    }
+
+    func autoCompleteTextFieldResultListWillShow(_ textField: AutoCompleteTextField) {
+        UIView.animate(withDuration: 0.25, delay: 0.0, options: [.curveEaseOut], animations: {
+            self.resultLabelTopConstraint.constant = textField.currentResultListHeight + 25
+            self.view.layoutIfNeeded()
+        }, completion: nil)
+    }
+
+    func autoCompleteTextFieldResultListDidHide(_ textField: AutoCompleteTextField) {
+        UIView.animate(withDuration: 0.25, delay: 0.0, options: [.curveEaseOut], animations: {
+            self.resultLabelTopConstraint.constant = 25
+            self.view.layoutIfNeeded()
+        }, completion: nil)
     }
 
     // MARK: - Actions

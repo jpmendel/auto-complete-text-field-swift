@@ -34,7 +34,7 @@
                     <textInputTraits key="textInputTraits" autocorrectionType="no"/>
                 </textField>
                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Selected: Nothing" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="bkP-gq-VIg">
-                    <rect key="frame" x="30" y="270" width="315" height="40"/>
+                    <rect key="frame" x="30" y="175" width="315" height="40"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="40" id="xEQ-G3-1Kp"/>
                     </constraints>
@@ -80,7 +80,7 @@
                 <constraint firstItem="zs6-f9-MKQ" firstAttribute="top" secondItem="cJK-GR-dlG" secondAttribute="bottom" constant="25" id="QtZ-GT-oXU"/>
                 <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" secondItem="bkP-gq-VIg" secondAttribute="trailing" constant="30" id="SJk-j0-N5m"/>
                 <constraint firstItem="zs6-f9-MKQ" firstAttribute="trailing" secondItem="i5M-Pr-FkT" secondAttribute="centerX" constant="-15" id="UqE-2p-6cZ"/>
-                <constraint firstItem="bkP-gq-VIg" firstAttribute="top" secondItem="cJK-GR-dlG" secondAttribute="bottom" constant="180" id="etg-pm-k8E"/>
+                <constraint firstItem="bkP-gq-VIg" firstAttribute="top" secondItem="zs6-f9-MKQ" secondAttribute="bottom" constant="25" id="Zkz-QC-gWT"/>
                 <constraint firstItem="cJK-GR-dlG" firstAttribute="top" secondItem="fnl-2z-Ty3" secondAttribute="top" constant="40" id="f0Y-cq-DoQ"/>
                 <constraint firstItem="bkP-gq-VIg" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" constant="30" id="slP-Mb-sxr"/>
             </constraints>
