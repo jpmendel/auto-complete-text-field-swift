@@ -89,8 +89,13 @@ class LinkedDataSourceExampleViewController: UIViewController, UITextFieldDelega
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        guard let result = autoCompleteTextField.filteredResults[indexPath.row] as? String else { return }
-        resultLabel.text = "Selected: \(result)"
+        let result: String?
+        if autoCompleteTextField.filteredResults.count > 0 {
+            result = autoCompleteTextField.filteredResults[indexPath.row] as? String
+        } else {
+            result = autoCompleteTextField.dataSource[indexPath.row] as? String
+        }
+        resultLabel.text = "Selected: \(result ?? "Nothing")"
     }
 
     // MARK: - Actions
