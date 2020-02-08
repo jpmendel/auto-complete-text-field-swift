@@ -621,10 +621,7 @@ open class AutoCompleteTextField: UITextField, UITextFieldDelegate, UITableViewD
         let backupCell = UITableViewCell(style: .default, reuseIdentifier: "BackupTableViewCell")
         backupCell.backgroundColor = .clear
         guard !isFilteringResults, indexPath.row >= 0, indexPath.row < filteredResults.count else { return backupCell }
-        if let autoCompleteDelegate = autoCompleteDelegate {
-            return autoCompleteDelegate.autoCompleteTextField(self, cellFor: filteredResults[indexPath.row], at: indexPath) ?? createDefaultAutoCompleteCell(at: indexPath)
-        }
-        return createDefaultAutoCompleteCell(at: indexPath)
+        return autoCompleteDelegate?.autoCompleteTextField(self, cellFor: filteredResults[indexPath.row], at: indexPath) ?? createDefaultAutoCompleteCell(at: indexPath)
     }
 
     open func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
